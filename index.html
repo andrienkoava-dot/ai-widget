@@ -1,13 +1,50 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>AI Widget</title>
+  <title>TEST</title>
 </head>
 <body>
 
-<h1>🔥 AI Widget работает</h1>
+<h1>TEST PAGE</h1>
 
-<script src="https://cdn.jsdelivr.net/gh/andrienkoava-dot/ai-widget/widget.js"></script>
+<script>
+(async function () {
+  try {
+    const res = await fetch("https://ai-widget-m0ga.onrender.com/api/recommend", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ content: "test" })
+    });
+
+    const data = await res.json();
+
+    const el = document.createElement("div");
+
+    el.style = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: white;
+      padding: 15px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      z-index: 9999;
+    `;
+
+    el.innerHTML = data.results.map(r => `
+      <div>
+        <b>${r.name}</b> ⭐ ${r.rating}
+      </div>
+    `).join("");
+
+    document.body.appendChild(el);
+
+  } catch (e) {
+    alert("Ошибка: " + e.message);
+  }
+})();
+</script>
 
 </body>
-</html>
+</html>\
