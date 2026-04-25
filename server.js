@@ -14,7 +14,7 @@ app.get("/", (req, res) => {
 });
 
 /*
-REAL STRIPE CHECKOUT SESSION
+CREATE CHECKOUT SESSION
 */
 app.post("/create-checkout-session", async (req, res) => {
   try {
@@ -66,7 +66,38 @@ app.post("/create-checkout-session", async (req, res) => {
       ],
 
       success_url: `${process.env.CLIENT_URL}/success.html`,
-      cancel_url: `${process.env.CLIENT_URL}/checkout.html`
+      cancel_url: `${process.env.CLIENT_URL}/dashboard.html`
+    });
+
+    res.json({
+      url: session.url
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
+
+/*
+STRIPE BILLING PORTAL
+*/
+app.post("/create-billing-portal", async (req, res) => {
+  try {
+    const { customerId } = req.body;
+
+    if (!customerId) {
+      return res.status(400).json({
+        error: "Customer ID required"
+      });
+    }
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: `${process.env.CLIENT_URL}/dashboard.html`
     });
 
     res.json({
@@ -85,3 +116,4 @@ app.post("/create-checkout-session", async (req, res) => {
 app.listen(process.env.PORT || 10000, () => {
   console.log("Server running");
 });
+        
