@@ -1,420 +1,154 @@
 (function () {
-  /**
-   * ULTIMATE AI WIDGET — FINAL PRODUCTION VERSION
-   *
-   * WHAT IT DOES:
-   * - auto detects page category
-   * - detects language
-   * - detects user geo
-   * - tracks behavior
-   * - remembers user preferences
-   * - smart recommendations
-   * - monetization-ready (CPA)
-   * - premium UI
-   * - fast loading
-   * - anti-duplicate render
-   * - auto-open + delayed render
-   * - works on any website
-   *
-   * JUST PASTE THIS FILE INTO widget.js
-   * AND CONNECT:
-   *
-   * <script src="https://cdn.jsdelivr.net/gh/andrienkoava-dot/ai-widget/widget.js"></script>
-   */
+  if (window.vlanWidgetLoaded) return;
+  window.vlanWidgetLoaded = true;
 
-  const CONFIG = {
-    API_URL: "https://ai-widget-m0ga.onrender.com/api/recommend",
-    GEO_API: "https://ipapi.co/json/",
-    DEFAULT_LANG: "en",
-    WIDGET_ID: "ultimate-ai-widget",
-    STORAGE_KEY: "ultimate_ai_widget_history",
-    DELAY_RENDER_MS: 1500,
-    MAX_CONTENT_LENGTH: 3000,
-    MAX_HISTORY_LENGTH: 50,
-    CPA_REDIRECT_BASE:
-      "https://www.booking.com/searchresults.html?ss="
-  };
-
-  if (document.getElementById(CONFIG.WIDGET_ID)) return;
-
-  let state = {
-    geo: {},
-    lang: CONFIG.DEFAULT_LANG,
-    category: "general",
-    content: "",
-    history: loadHistory(),
-    recommendations: []
-  };
-
-  function loadHistory() {
-    try {
-      const raw = localStorage.getItem(CONFIG.STORAGE_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  }
-
-  function saveHistory(item) {
-    try {
-      state.history.unshift({
-        item,
-        ts: Date.now()
-      });
-
-      state.history = state.history.slice(
-        0,
-        CONFIG.MAX_HISTORY_LENGTH
-      );
-
-      localStorage.setItem(
-        CONFIG.STORAGE_KEY,
-        JSON.stringify(state.history)
-      );
-    } catch {}
-  }
-
-  function detectLanguage() {
-    return navigator.language || CONFIG.DEFAULT_LANG;
-  }
-
-  function detectCategory(text) {
-    const t = (text || "").toLowerCase();
-
-    const rules = [
-      {
-        type: "barbershop",
-        words: [
-          "barber",
-          "haircut",
-          "salon",
-          "beard",
-          "fade",
-          "hair"
-        ]
-      },
-      {
-        type: "bank",
-        words: [
-          "bank",
-          "loan",
-          "credit",
-          "mortgage",
-          "finance",
-          "deposit"
-        ]
-      },
-      {
-        type: "restaurant",
-        words: [
-          "restaurant",
-          "food",
-          "pizza",
-          "burger",
-          "dinner",
-          "lunch",
-          "cafe"
-        ]
-      },
-      {
-        type: "hotel",
-        words: [
-          "hotel",
-          "travel",
-          "booking",
-          "vacation",
-          "resort",
-          "trip"
-        ]
-      },
-      {
-        type: "movie",
-        words: [
-          "movie",
-          "film",
-          "cinema",
-          "actor",
-          "series",
-          "show"
-        ]
-      },
-      {
-        type: "doctor",
-        words: [
-          "clinic",
-          "doctor",
-          "dentist",
-          "medical",
-          "hospital"
-        ]
-      },
-      {
-        type: "fitness",
-        words: [
-          "gym",
-          "fitness",
-          "workout",
-          "training",
-          "coach"
-        ]
-      }
-    ];
-
-    for (const rule of rules) {
-      for (const word of rule.words) {
-        if (t.includes(word)) return rule.type;
-      }
-    }
-
-    return "general";
-  }
-
-  async function detectGeo() {
-    try {
-      const res = await fetch(CONFIG.GEO_API);
-      return await res.json();
-    } catch {
-      return {};
-    }
-  }
-
-  function getPageContent() {
-    return (
-      document.body.innerText || ""
-    ).slice(0, CONFIG.MAX_CONTENT_LENGTH);
-  }
-
-  async function getRecommendations() {
-    try {
-      const res = await fetch(CONFIG.API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          content: state.content,
-          geo: state.geo,
-          lang: state.lang,
-          category: state.category,
-          history: state.history,
-          url: location.href,
-          title: document.title
-        })
-      });
-
-      const json = await res.json();
-
-      if (json.results?.length) {
-        return json.results;
-      }
-
-      return fallbackResults();
-    } catch {
-      return fallbackResults();
-    }
-  }
-
-  function fallbackResults() {
-    return [
-      {
-        name: "Top Place",
-        rating: 4.9
-      },
-      {
-        name: "Best Choice",
-        rating: 4.8
-      },
-      {
-        name: "Popular Option",
-        rating: 4.7
-      }
-    ];
-  }
-
-  function trackClick(item) {
-    saveHistory(item.name);
-
-    try {
-      fetch(CONFIG.API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          event: "click",
-          item,
-          url: location.href
-        })
-      }).catch(() => {});
-    } catch {}
-  }
-
-  function openCPA(item) {
-    trackClick(item);
-
-    const url =
-      CONFIG.CPA_REDIRECT_BASE +
-      encodeURIComponent(item.name);
-
-    window.open(url, "_blank");
-  }
-
-  function closeWidget() {
-    const el = document.getElementById(CONFIG.WIDGET_ID);
-    if (el) el.remove();
-  }
-
-  function createWidget(results) {
-    const old = document.getElementById(CONFIG.WIDGET_ID);
-    if (old) old.remove();
-
-    const root = document.createElement("div");
-    root.id = CONFIG.WIDGET_ID;
-
-    root.style.cssText = `
+  const style = document.createElement("style");
+  style.innerHTML = `
+    .vlan-widget {
       position: fixed;
-      right: 24px;
       bottom: 24px;
-      width: 360px;
+      right: 24px;
+      width: 340px;
       background: #ffffff;
-      border-radius: 18px;
-      padding: 18px;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.18);
-      z-index: 999999999;
+      border-radius: 22px;
+      box-shadow: 0 18px 60px rgba(0,0,0,0.12);
+      z-index: 999999;
+      overflow: hidden;
       font-family: Inter, Arial, sans-serif;
-      border: 1px solid rgba(0,0,0,0.05);
-      animation: fadeInWidget .35s ease;
-    `;
+      animation: vlanFadeIn 0.4s ease;
+    }
 
-    const items = results
-      .map(
-        (item) => `
-        <div
-          class="ai-widget-item"
-          data-name="${item.name}"
-          data-rating="${item.rating || 4.5}"
-          style="
-            background:#f7f8fa;
-            border-radius:12px;
-            padding:12px;
-            margin-bottom:10px;
-            cursor:pointer;
-            transition:.2s;
-          "
-        >
-          <div style="font-weight:600;font-size:15px;">
-            ${item.name}
-          </div>
+    @keyframes vlanFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
 
-          <div style="
-            margin-top:4px;
-            font-size:13px;
-            color:#666;
-          ">
-            ⭐ ${item.rating || 4.5}
-          </div>
-        </div>
-      `
-      )
-      .join("");
+    .vlan-header {
+      background: #111;
+      color: white;
+      padding: 18px 20px;
+      font-size: 16px;
+      font-weight: 700;
+    }
 
-    root.innerHTML = `
-      <style>
-        @keyframes fadeInWidget {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+    .vlan-body {
+      padding: 20px;
+    }
 
-        .ai-widget-item:hover {
-          transform: translateY(-2px);
-        }
-      </style>
+    .vlan-badge {
+      display: inline-block;
+      background: #f5f5f5;
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      margin-bottom: 12px;
+      margin-right: 8px;
+    }
 
-      <div style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        margin-bottom:10px;
-      ">
-        <div>
-          <div style="
-            font-size:13px;
-            color:#888;
-          ">
-            AI Recommendation
-          </div>
+    .vlan-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
 
-          <div style="
-            font-size:18px;
-            font-weight:700;
-            margin-top:4px;
-          ">
-            Best option for you
-          </div>
-        </div>
+    .vlan-text {
+      color: #666;
+      line-height: 1.6;
+      font-size: 14px;
+      margin-bottom: 18px;
+    }
 
-        <div
-          id="ai-widget-close"
-          style="
-            cursor:pointer;
-            font-size:20px;
-            color:#999;
-          "
-        >
-          ×
-        </div>
+    .vlan-rating {
+      font-size: 15px;
+      margin-bottom: 18px;
+      font-weight: 600;
+    }
+
+    .vlan-btn {
+      width: 100%;
+      background: #111;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .vlan-footer {
+      margin-top: 14px;
+      font-size: 12px;
+      color: #888;
+      text-align: center;
+    }
+
+    @media (max-width: 500px) {
+      .vlan-widget {
+        width: calc(100% - 24px);
+        right: 12px;
+        left: 12px;
+        bottom: 12px;
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+
+  const widget = document.createElement("div");
+  widget.className = "vlan-widget";
+
+  widget.innerHTML = `
+    <div class="vlan-header">
+      Recommended for You
+    </div>
+
+    <div class="vlan-body">
+
+      <div class="vlan-badge">
+        ⭐ Top Place
       </div>
 
-      ${items}
-    `;
+      <div class="vlan-badge">
+        🔥 Best Choice
+      </div>
 
-    document.body.appendChild(root);
+      <div class="vlan-title">
+        Customers choose this option 3x more often
+      </div>
 
-    document
-      .getElementById("ai-widget-close")
-      .addEventListener("click", closeWidget);
+      <div class="vlan-text">
+        Trusted by high-converting businesses to improve sales,
+        confidence and revenue performance.
+      </div>
 
-    document
-      .querySelectorAll(".ai-widget-item")
-      .forEach((el) => {
-        el.addEventListener("click", () => {
-          openCPA({
-            name: el.dataset.name,
-            rating: el.dataset.rating
-          });
-        });
-      });
-  }
+      <div class="vlan-rating">
+        ★ 4.9/5 based on 2,184 reviews
+      </div>
 
-  async function preload() {
-    try {
-      fetch(CONFIG.API_URL, {
-        method: "POST"
-      }).catch(() => {});
-    } catch {}
-  }
+      <button class="vlan-btn" id="vlanActionBtn">
+        View Recommendation
+      </button>
 
-  async function boot() {
-    preload();
+      <div class="vlan-footer">
+        Smart recommendations powered by VLAN AI
+      </div>
 
-    state.lang = detectLanguage();
-    state.content = getPageContent();
-    state.category = detectCategory(state.content);
-    state.geo = await detectGeo();
-    state.recommendations =
-      await getRecommendations();
+    </div>
+  `;
 
-    createWidget(state.recommendations);
-  }
+  document.body.appendChild(widget);
 
-  setTimeout(
-    boot,
-    CONFIG.DELAY_RENDER_MS
-  );
+  document
+    .getElementById("vlanActionBtn")
+    .addEventListener("click", function () {
+      window.location.href = "https://ai-startup-iota.vercel.app/checkout.html";
+    });
 })();
